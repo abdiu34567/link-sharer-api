@@ -97,15 +97,32 @@ exports.getLinks = async (req, res) => {
 
 // @desc    Delete a link by ID
 // @route   DELETE /api/links/:id
+// @desc    Delete a link by ID (with security check)
+// @route   DELETE /api/links/:id
 exports.deleteLink = async (req, res) => {
   try {
+    // 1. Get the secret key from the request headers
+    const providedKey = req.headers["x-deletion-key"];
+
+    // 2. THE SECURITY CHECK: Compare it to the key in your .env file
+    if (providedKey !== process.env.DELETION_SECRET_KEY) {
+      // 403 Forbidden is the correct status code for an invalid key
+      return res
+        .status(403)
+        .json({ message: "Forbidden: Invalid or missing deletion key." });
+    }
+
+    // 3. Find the link by its ID from the URL parameters
     const link = await Link.findById(req.params.id);
 
     if (!link) {
       return res.status(404).json({ message: "Link not found" });
     }
 
-    await link.remove();
+    // 4. If the key is valid and the link exists, remove it
+    // Mongoose v5 used link.remove(). v6+ uses the static deleteOne method.
+    await Link.deleteOne({ _id: req.params.id });
+
     res.status(200).json({ message: "Link removed successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
