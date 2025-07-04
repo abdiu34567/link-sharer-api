@@ -26,7 +26,16 @@ app.use(express.json());
 // Mount the routes
 // The Express app will handle all routes starting from the root '/'
 // The vercel.json file will ensure that only requests to /api/* reach this app.
-app.use("/api", linkRoutes);
+app.use("/api/links", linkRoutes);
+
+// We only want to start a server (app.listen) if this file is run directly.
+// If it's imported by Vercel (or another file), we just want to export the app.
+if (require.main === module) {
+  const PORT = process.env.PORT || 5001;
+  app.listen(PORT, () => {
+    console.log(`✅ Server is running locally on port ${PORT}`);
+  });
+}
 
 // IMPORTANT: Export the app object
 module.exports = app;
